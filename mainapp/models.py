@@ -1,10 +1,24 @@
+import sys
+from PIL import Image
+
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
+from io import BytesIO
 
 
 User = get_user_model()
+
+
+class MinResolutionExceptionError(Exception):
+    pass
+
+
+class MaxResolutionExceptionError(Exception):
+    pass
 
 
 class LatestProductsManager:
@@ -43,6 +57,10 @@ class Category(models.Model):
 
 class Product(models.Model):
 
+    MIN_RESOLUTION = (400, 400)
+    MAX_RESOLUTION = (800, 800)
+    MAX_IMAGE_SIZE = 3145728
+
     class Meta:
         abstract = True
 
@@ -55,6 +73,28 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        image = self.image
+        img = Image.open(image)
+        # min_height, min_width = self.MIN_RESOLUTION
+        # max_height, max_width = self.MAX_RESOLUTION
+        # if img.height < min_height or img.width < min_width:
+        #     raise MinResolutionExceptionError('Image resolution less than minimum')
+        # if img.height > max_height or img.width > max_width:
+        #     raise MaxResolutionExceptionError('Image resolution more than maximum')
+        new_img = img.convert('RGB')
+        w_percent = (self.MAX_RESOLUTION[0] / float(img.size[0]))
+        h_size = int((float(img.size[1]) * float(w_percent)))
+        resized_new_img = new_img.resize((self.MAX_RESOLUTION[0], h_size), Image.ANTIALIAS)
+        files_stream = BytesIO()
+        resized_new_img.save(files_stream, 'JPEG', quality=90)
+        files_stream.seek(0)
+        name = '{}.{}'.format(*self.image.name.split('.'))
+        self.image = InMemoryUploadedFile(
+            files_stream, 'ImageField', name, 'jpeg/image', sys.getsizeof(files_stream), None
+        )
+        super().save(*args, **kwargs)
 
 
 class CartProduct(models.Model):
