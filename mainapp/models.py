@@ -1,16 +1,16 @@
-import sys
-from PIL import Image
-
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
-from django.core.files.uploadedfile import InMemoryUploadedFile
-
-from io import BytesIO
+from django.urls import reverse
 
 
 User = get_user_model()
+
+
+def get_product_url(obj, view_name):
+    ct_model = obj.__class__._meta.model_name
+    return reverse(view_name, kwargs={'ct_model': ct_model, 'slug': obj.slug})
 
 
 class MinResolutionExceptionError(Exception):
@@ -74,28 +74,6 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
-    def save(self, *args, **kwargs):
-        image = self.image
-        img = Image.open(image)
-        # min_height, min_width = self.MIN_RESOLUTION
-        # max_height, max_width = self.MAX_RESOLUTION
-        # if img.height < min_height or img.width < min_width:
-        #     raise MinResolutionExceptionError('Image resolution less than minimum')
-        # if img.height > max_height or img.width > max_width:
-        #     raise MaxResolutionExceptionError('Image resolution more than maximum')
-        new_img = img.convert('RGB')
-        w_percent = (self.MAX_RESOLUTION[0] / float(img.size[0]))
-        h_size = int((float(img.size[1]) * float(w_percent)))
-        resized_new_img = new_img.resize((self.MAX_RESOLUTION[0], h_size), Image.ANTIALIAS)
-        files_stream = BytesIO()
-        resized_new_img.save(files_stream, 'JPEG', quality=90)
-        files_stream.seek(0)
-        name = '{}.{}'.format(*self.image.name.split('.'))
-        self.image = InMemoryUploadedFile(
-            files_stream, 'ImageField', name, 'jpeg/image', sys.getsizeof(files_stream), None
-        )
-        super().save(*args, **kwargs)
-
 
 class CartProduct(models.Model):
 
@@ -144,13 +122,16 @@ class Notebook(Product):
     def __str__(self):
         return '{} : {}'.format(self.category.name, self.title)
 
+    def get_absolut_url(self):
+        return get_product_url(self, 'product_detail')
+
 
 class Smartphone(Product):
 
     diagonal = models.CharField(max_length=255, verbose_name='Diagonal')
     display_type = models.CharField(max_length=255, verbose_name='Display type')
     resolution = models.CharField(max_length=255, verbose_name='Screen resolution')
-    Battery_cap = models.CharField(max_length=255, verbose_name='Battery capacity')
+    battery_cap = models.CharField(max_length=255, verbose_name='Battery capacity')
     ram = models.CharField(max_length=255, verbose_name='RAM')
     sd = models.BooleanField(default=True)
     sd_volume_max = models.CharField(max_length=255, verbose_name='Sd max volume')
@@ -159,3 +140,6 @@ class Smartphone(Product):
 
     def __str__(self):
         return '{} : {}'.format(self.category.name, self.title)
+
+    def get_absolut_url(self):
+        return get_product_url(self, 'product_detail')
