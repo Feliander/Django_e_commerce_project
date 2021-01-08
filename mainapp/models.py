@@ -86,7 +86,7 @@ class CartProduct(models.Model):
     final_price = models.DecimalField(max_digits=9, decimal_places=2, verbose_name='Final price')
 
     def __str__(self):
-        return 'Product: {} (for cart)'.format(self.product.title)
+        return 'Product: {} (for cart)'.format(self.content_object.title)
 
 
 class Cart(models.Model):
@@ -95,6 +95,8 @@ class Cart(models.Model):
     products = models.ManyToManyField(CartProduct, blank=True, related_name='related_cart')
     total_products = models.PositiveIntegerField(default=0)
     final_price = models.DecimalField(max_digits=9, decimal_places=2, verbose_name='Final price')
+    in_order = models.BooleanField(default=False)
+    for_anonymous_user = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.id)
@@ -133,8 +135,8 @@ class Smartphone(Product):
     resolution = models.CharField(max_length=255, verbose_name='Screen resolution')
     battery_cap = models.CharField(max_length=255, verbose_name='Battery capacity')
     ram = models.CharField(max_length=255, verbose_name='RAM')
-    sd = models.BooleanField(default=True)
-    sd_volume_max = models.CharField(max_length=255, verbose_name='Sd max volume')
+    sd = models.BooleanField(default=True, verbose_name='SD card availability')
+    sd_volume_max = models.CharField(max_length=255, null=True, blank=True, verbose_name='Sd max volume')
     main_cam_mp = models.CharField(max_length=255, verbose_name='Main camera')
     front_cam_mp = models.CharField(max_length=255, verbose_name='Front camera')
 
@@ -143,3 +145,9 @@ class Smartphone(Product):
 
     def get_absolut_url(self):
         return get_product_url(self, 'product_detail')
+
+    # @property
+    # def sd(self):
+    #     if self.sd:
+    #         return 'yes'
+    #     return 'no'
