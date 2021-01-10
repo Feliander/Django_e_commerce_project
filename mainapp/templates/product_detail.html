@@ -16,6 +16,10 @@
         <h3>{{ product.title }}</h3>
         <p>Price: {{ product.price }} rubles.</p>
         <p>Description: {{ product.description }}</p>
+        <hr>
+        <a href="{% url 'add_to_cart' ct_model=ct_model slug=product.slug %}">
+            <button class="btn btn-danger">Add to the cart</button>
+        </a>
     </div>
     <p class="mt-4">Characteristics: </p>
 

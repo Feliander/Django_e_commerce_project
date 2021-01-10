@@ -42,10 +42,10 @@ PRODUCT_SPEC = {
         'Screen resolution': 'resolution',
         'RAM': 'ram',
         'Battery capacity': 'battery_cap',
-        'SD': 'sd',
-        'SD max volume': 'sd_volume_max',
         'Main camera': 'main_cam_mp',
-        'Front camera': 'front_cam_mp'
+        'Front camera': 'front_cam_mp',
+        'SD': 'sd',
+        'Sd max volume': 'sd_volume_max'
     }
 }
 
@@ -62,7 +62,7 @@ def product_spec(product):
     model_name = product.__class__._meta.model_name
     if isinstance(product, Smartphone):
         if not product.sd:
-            PRODUCT_SPEC['smartphone'].pop('SD max volume')
+            PRODUCT_SPEC['smartphone'].pop('Sd max volume', 3000)
         else:
-            PRODUCT_SPEC['smartphone']['SD max volume'] = 'sd_volume_max'
+            PRODUCT_SPEC['smartphone']['Sd max volume'] = 'sd_volume_max'
     return mark_safe(TABLE_HEAD + get_product_spec(product, model_name) + TABLE_TAIL)
