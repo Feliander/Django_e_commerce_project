@@ -4,21 +4,16 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.urls import reverse
 
-
 User = get_user_model()
+
+
+def get_models_for_count(*model_names):
+    return [models.Count(model_name) for model_name in model_names]
 
 
 def get_product_url(obj, view_name):
     ct_model = obj.__class__._meta.model_name
     return reverse(view_name, kwargs={'ct_model': ct_model, 'slug': obj.slug})
-
-
-class MinResolutionExceptionError(Exception):
-    pass
-
-
-class MaxResolutionExceptionError(Exception):
-    pass
 
 
 class LatestProductsManager:
@@ -46,17 +41,38 @@ class LatestProducts:
     objects = LatestProductsManager()
 
 
-class Category(models.Model):
+class CategoryManager(models.Manager):
+    CATEGORY_NAME_COUNT_NAME = {
+        'Notebooks': 'notebook__count',
+        'Smartphones': 'smartphone__count'
+    }
 
+    def get_queryset(self):
+        return super().get_queryset()
+
+    def get_categories_for_left_sidebar(self):
+        models = get_models_for_count('notebook', 'smartphone')
+        qs = list(self.get_queryset().annotate(*models))
+        data = [
+            dict(name=c.name, url=c.get_absolut_url(), count=getattr(c, self.CATEGORY_NAME_COUNT_NAME[c.name]))
+            for c in qs
+        ]
+        return data
+
+
+class Category(models.Model):
     name = models.CharField(max_length=255, verbose_name='Category name')
     slug = models.SlugField(unique=True)
+    objects = CategoryManager()
 
     def __str__(self):
         return self.name
 
+    def get_absolut_url(self):
+        return reverse('category_detail', kwargs={'slug': self.slug})
+
 
 class Product(models.Model):
-
     MIN_RESOLUTION = (400, 400)
     MAX_RESOLUTION = (800, 800)
     MAX_IMAGE_SIZE = 3145728
@@ -76,7 +92,6 @@ class Product(models.Model):
 
 
 class CartProduct(models.Model):
-
     user = models.ForeignKey('Customer', verbose_name='Customer', on_delete=models.CASCADE)
     cart = models.ForeignKey('Cart', verbose_name='Cart', on_delete=models.CASCADE, related_name='related_products')
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -90,7 +105,6 @@ class CartProduct(models.Model):
 
 
 class Cart(models.Model):
-
     owner = models.ForeignKey('Customer', verbose_name='Owner', on_delete=models.CASCADE)
     products = models.ManyToManyField(CartProduct, blank=True, related_name='related_cart')
     total_products = models.PositiveIntegerField(default=0)
@@ -103,7 +117,6 @@ class Cart(models.Model):
 
 
 class Customer(models.Model):
-
     user = models.ForeignKey(User, verbose_name='User', on_delete=models.CASCADE)
     phone = models.CharField(max_length=20, verbose_name='Phone number')
     address = models.CharField(max_length=255, verbose_name='Address')
@@ -113,7 +126,6 @@ class Customer(models.Model):
 
 
 class Notebook(Product):
-
     diagonal = models.CharField(max_length=255, verbose_name='Diagonal')
     display_type = models.CharField(max_length=255, verbose_name='Display type')
     processor_freq = models.CharField(max_length=255, verbose_name='Processor frequency')
@@ -129,7 +141,6 @@ class Notebook(Product):
 
 
 class Smartphone(Product):
-
     diagonal = models.CharField(max_length=255, verbose_name='Diagonal')
     display_type = models.CharField(max_length=255, verbose_name='Display type')
     resolution = models.CharField(max_length=255, verbose_name='Screen resolution')
@@ -145,9 +156,3 @@ class Smartphone(Product):
 
     def get_absolut_url(self):
         return get_product_url(self, 'product_detail')
-
-    # @property
-    # def sd(self):
-    #     if self.sd:
-    #         return 'yes'
-    #     return 'no'
