@@ -90,6 +90,9 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
+    def get_model_name(self):
+        return self.__class__.__name__.lower()
+
 
 class CartProduct(models.Model):
     user = models.ForeignKey('Customer', verbose_name='Customer', on_delete=models.CASCADE)
@@ -121,12 +124,14 @@ class Cart(models.Model):
 
     def save(self, *args, **kwargs):
         cart_data = self.products.aggregate(models.Sum('final_price'), models.Count('id'))
+        # cart_data = self.products.aggregate(models.Sum('final_price'), models.Sum('id'))
         print(cart_data)
         if cart_data.get('final_price__sum'):
             self.final_price = cart_data['final_price__sum']
         else:
             self.final_price = 0
         self.total_products = cart_data['id__count']
+        # self.total_products = cart_data['id__sum']
         super().save(*args, **kwargs)
 
 
