@@ -51,10 +51,8 @@
           <td colspan="2"></td>
           <td>Total:</td>
           <td>{{ cart.total_products }}</td>
-          <td>
-
-          </td>
           <td><strong>{{ cart.final_price }} rubles</strong></td>
+          <td><a href="{% url 'checkout' %}"><button class="btn btn-primary">Go to registration</button></a></td>
         </tr>
   </tbody>
 </table>
