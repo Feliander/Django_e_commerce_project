@@ -109,13 +109,14 @@ class CartProduct(models.Model):
     def save(self, *args, **kwargs):
         self.final_price = self.qty * self.content_object.price
         super().save(*args, **kwargs)
+        # pass
 
 
 class Cart(models.Model):
     owner = models.ForeignKey('Customer', null=True, verbose_name='Owner', on_delete=models.CASCADE)
     products = models.ManyToManyField(CartProduct, blank=True, related_name='related_cart')
-    total_products = models.PositiveIntegerField(default=0)
-    final_price = models.DecimalField(max_digits=9, default=0,decimal_places=2, verbose_name='Final price')
+    total_products = models.PositiveIntegerField(default=0, null=True)
+    final_price = models.DecimalField(max_digits=9, default=0, decimal_places=2, verbose_name='Final price')
     in_order = models.BooleanField(default=False)
     for_anonymous_user = models.BooleanField(default=False)
 
@@ -123,15 +124,13 @@ class Cart(models.Model):
         return str(self.id)
 
     def save(self, *args, **kwargs):
-        cart_data = self.products.aggregate(models.Sum('final_price'), models.Count('id'))
-        # cart_data = self.products.aggregate(models.Sum('final_price'), models.Sum('id'))
-        print(cart_data)
+        cart_data = self.products.aggregate(models.Sum('final_price'), models.Sum('qty'))
+        print('cart data = ' + str(cart_data))
         if cart_data.get('final_price__sum'):
             self.final_price = cart_data['final_price__sum']
         else:
             self.final_price = 0
-        self.total_products = cart_data['id__count']
-        # self.total_products = cart_data['id__sum']
+        self.total_products = cart_data['qty__sum']
         super().save(*args, **kwargs)
 
 
