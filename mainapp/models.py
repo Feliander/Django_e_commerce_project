@@ -110,7 +110,6 @@ class CartProduct(models.Model):
     def save(self, *args, **kwargs):
         self.final_price = self.qty * self.content_object.price
         super().save(*args, **kwargs)
-        # pass
 
 
 class Cart(models.Model):

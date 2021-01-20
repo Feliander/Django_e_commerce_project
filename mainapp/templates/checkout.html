@@ -37,7 +37,7 @@
 <form action="{% url 'make-order' %}" method="POST">
   {% csrf_token %}
   {{ form|crispy }}
-  <input type="submit" class="btn btn-success btn-block mb-3" values="Checkout">
+  <input type="submit" class="btn btn-success btn-block mb-3" value="Checkout">
 </form>
 
 {% endblock content %}
