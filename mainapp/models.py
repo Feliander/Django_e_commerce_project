@@ -1,9 +1,13 @@
+import sys
+from PIL import Image
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.urls import reverse
 from django.utils import timezone
+from io import BytesIO
 
 User = get_user_model()
 
@@ -93,6 +97,23 @@ class Product(models.Model):
 
     def get_model_name(self):
         return self.__class__.__name__.lower()
+
+    def save(self, *args, **kwargs):
+        image = self.image
+        img = Image.open(image)
+        new_img = img.convert('RGB')
+        w_percent = (self.MAX_RESOLUTION[0] / float(img.size[0]))
+        h_size = int((float(img.size[1]) * float(w_percent)))
+        resized_new_img = new_img.resize((self.MAX_RESOLUTION[0], h_size), Image.ANTIALIAS)
+        filestream = BytesIO()
+        resized_new_img.save(filestream, 'JPEG', quality=90)
+        filestream.seek(0)
+        name = '{}.{}'.format(*self.image.name.split('.'))
+        print(self.image.name, name)
+        self.image = InMemoryUploadedFile(
+            filestream, 'ImageField', name, 'jpeg/image', sys.getsizeof(filestream), None
+        )
+        super().save(*args, **kwargs)
 
 
 class CartProduct(models.Model):
